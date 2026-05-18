@@ -7,8 +7,10 @@ import {
   usersTable,
   goalSheetsTable,
   thrustAreasTable,
+  goalCyclesTable,
 } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
+import { notifyCheckInSubmitted } from "../lib/notify";
 
 const router = Router();
 
@@ -216,6 +218,14 @@ router.post("/:id/submit", async (req, res) => {
     res.status(404).json({ error: "Check-in not found" });
     return;
   }
+
+  // Notifications
+  try {
+    const [ciEmp] = await db.select({ name: usersTable.name, managerId: usersTable.managerId }).from(usersTable).where(eq(usersTable.id, updated.employeeId)).limit(1);
+    const [ciCycle] = await db.select({ name: goalCyclesTable.name }).from(goalCyclesTable).where(eq(goalCyclesTable.id, updated.cycleId)).limit(1);
+    await notifyCheckInSubmitted({ employeeId: updated.employeeId, employeeName: ciEmp?.name ?? "Employee", managerId: ciEmp?.managerId ?? null, quarter: updated.quarter, cycleName: ciCycle?.name ?? "", checkInId: updated.id, overallProgress: updated.overallProgress ? Number(updated.overallProgress) : null });
+  } catch { /* non-fatal */ }
+
   res.json(await formatCheckIn(updated));
 });
 

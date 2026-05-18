@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
 import authRouter from "./auth";
+import ssoRouter from "./sso";
 import usersRouter from "./users";
 import cyclesRouter from "./cycles";
 import thrustAreasRouter from "./thrust-areas";
@@ -10,6 +11,8 @@ import sharedGoalsRouter from "./shared-goals";
 import checkInsRouter from "./check-ins";
 import dashboardRouter from "./dashboard";
 import reportsRouter from "./reports";
+import notificationsRouter from "./notifications";
+import escalationsRouter from "./escalations";
 import { db } from "@workspace/db";
 import { auditLogsTable, usersTable } from "@workspace/db";
 import { desc, inArray } from "drizzle-orm";
@@ -18,6 +21,7 @@ const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use("/auth", authRouter);
+router.use("/auth", ssoRouter);
 router.use("/users", usersRouter);
 router.use("/cycles", cyclesRouter);
 router.use("/thrust-areas", thrustAreasRouter);
@@ -27,6 +31,8 @@ router.use("/shared-goals", sharedGoalsRouter);
 router.use("/check-ins", checkInsRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/reports", reportsRouter);
+router.use("/notifications", notificationsRouter);
+router.use("/escalations", escalationsRouter);
 
 // Standalone audit-logs endpoint
 router.get("/audit-logs", async (req, res) => {

@@ -14,6 +14,8 @@ import Reports from "@/pages/Reports";
 import Admin from "@/pages/Admin";
 import SharedGoals from "@/pages/SharedGoals";
 import Scorecard from "@/pages/Scorecard";
+import Notifications from "@/pages/Notifications";
+import Escalations from "@/pages/Escalations";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -32,8 +34,10 @@ function AppRoutes({ user, onLogout }: { user: AuthUser; onLogout: () => void })
         <Route path="/check-ins" component={() => <CheckIns user={user} />} />
         <Route path="/shared-goals" component={() => <SharedGoals user={user} />} />
         {user.role === "employee" && <Route path="/scorecard" component={() => <Scorecard user={user} />} />}
+        <Route path="/notifications" component={() => <Notifications user={user} />} />
         {isManagerOrAdmin && <Route path="/analytics" component={() => <Analytics user={user} />} />}
         {isAdmin && <Route path="/reports" component={() => <Reports user={user} />} />}
+        {isAdmin && <Route path="/escalations" component={() => <Escalations user={user} />} />}
         {isAdmin && <Route path="/admin" component={() => <Admin user={user} />} />}
         <Route component={NotFound} />
       </Switch>

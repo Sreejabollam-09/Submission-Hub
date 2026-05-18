@@ -9,6 +9,7 @@ import {
   auditLogsTable,
 } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
+import { notifyGoalSubmitted, notifyGoalApproved, notifyGoalReturned } from "../lib/notify";
 
 const router = Router();
 
@@ -181,6 +182,11 @@ router.post("/:id/submit", async (req, res) => {
     oldValue: "draft",
   });
 
+  // Notifications
+  const [emp] = await db.select({ name: usersTable.name, managerId: usersTable.managerId }).from(usersTable).where(eq(usersTable.id, sheet.employeeId)).limit(1);
+  const [cycle] = await db.select({ name: goalCyclesTable.name }).from(goalCyclesTable).where(eq(goalCyclesTable.id, sheet.cycleId)).limit(1);
+  await notifyGoalSubmitted({ employeeId: sheet.employeeId, employeeName: emp?.name ?? "Employee", managerId: emp?.managerId ?? null, cycleName: cycle?.name ?? "", sheetId: id }).catch(() => {});
+
   res.json(await formatSheet(updated));
 });
 
@@ -206,6 +212,10 @@ router.post("/:id/approve", async (req, res) => {
     newValue: "approved",
     reason: body.comment,
   });
+  // Notifications
+  const [mgr] = await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, Number(userId))).limit(1);
+  const [approvedCycle] = await db.select({ name: goalCyclesTable.name }).from(goalCyclesTable).where(eq(goalCyclesTable.id, updated.cycleId)).limit(1);
+  await notifyGoalApproved({ employeeId: updated.employeeId, managerName: mgr?.name ?? "Manager", cycleName: approvedCycle?.name ?? "", sheetId: id }).catch(() => {});
   res.json(await formatSheet(updated));
 });
 
@@ -231,6 +241,10 @@ router.post("/:id/return", async (req, res) => {
     newValue: "returned",
     reason: body.comment,
   });
+  // Notifications
+  const [returnMgr] = await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, Number(userId))).limit(1);
+  const [returnCycle] = await db.select({ name: goalCyclesTable.name }).from(goalCyclesTable).where(eq(goalCyclesTable.id, updated.cycleId)).limit(1);
+  await notifyGoalReturned({ employeeId: updated.employeeId, managerName: returnMgr?.name ?? "Manager", cycleName: returnCycle?.name ?? "", sheetId: id, comment: body.comment ?? null }).catch(() => {});
   res.json(await formatSheet(updated));
 });
 

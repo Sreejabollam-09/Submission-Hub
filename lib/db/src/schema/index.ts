@@ -7,3 +7,5 @@ export * from "./shared-goals";
 export * from "./check-ins";
 export * from "./goal-updates";
 export * from "./audit-logs";
+export * from "./notifications";
+export * from "./escalation-rules";
