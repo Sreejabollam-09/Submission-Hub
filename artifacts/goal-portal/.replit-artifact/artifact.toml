@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "AtomQuest Goal Tracker"
+version = "1.0.0"
+id = "artifacts/goal-portal"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21164
+
+[services.development]
+run = "pnpm --filter @workspace/goal-portal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/goal-portal", "run", "build" ]
+publicDir = "artifacts/goal-portal/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21164"
+BASE_PATH = "/"

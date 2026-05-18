@@ -1,22 +1,45 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AtomQuest Goal Setting & Tracking Portal API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: users
+    description: User management
+  - name: cycles
+    description: Goal cycles
+  - name: thrust-areas
+    description: Thrust areas
+  - name: goal-sheets
+    description: Goal sheets
+  - name: goals
+    description: Individual goals
+  - name: shared-goals
+    description: Shared goals
+  - name: check-ins
+    description: Quarterly check-ins
+  - name: achievements
+    description: Achievement tracking
+  - name: dashboard
+    description: Dashboard & analytics
+  - name: reports
+    description: Reports & exports
+  - name: audit-logs
+    description: Audit trail
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +47,815 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # Auth
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with credentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Unauthorized
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+
+  # Users
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [employee, manager, admin]
+        - name: managerId
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+
+  # Cycles
+  /cycles:
+    get:
+      operationId: listCycles
+      tags: [cycles]
+      summary: List goal cycles
+      responses:
+        "200":
+          description: List of cycles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GoalCycle"
+    post:
+      operationId: createCycle
+      tags: [cycles]
+      summary: Create a goal cycle (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalCycleInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoalCycle"
+
+  /cycles/active:
+    get:
+      operationId: getActiveCycle
+      tags: [cycles]
+      summary: Get currently active goal cycle
+      responses:
+        "200":
+          description: Active cycle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoalCycle"
+        "404":
+          description: No active cycle
+
+  /cycles/{id}:
+    patch:
+      operationId: updateCycle
+      tags: [cycles]
+      summary: Update a cycle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalCycleUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoalCycle"
+
+  # Thrust Areas
+  /thrust-areas:
+    get:
+      operationId: listThrustAreas
+      tags: [thrust-areas]
+      summary: List thrust areas
+      responses:
+        "200":
+          description: List of thrust areas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ThrustArea"
+    post:
+      operationId: createThrustArea
+      tags: [thrust-areas]
+      summary: Create a thrust area (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ThrustAreaInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ThrustArea"
+
+  # Goal Sheets
+  /goal-sheets:
+    get:
+      operationId: listGoalSheets
+      tags: [goal-sheets]
+      summary: List goal sheets (role-filtered)
+      parameters:
+        - name: cycleId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: employeeId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, submitted, approved, returned]
+      responses:
+        "200":
+          description: List of goal sheets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GoalSheet"
+    post:
+      operationId: createGoalSheet
+      tags: [goal-sheets]
+      summary: Create a goal sheet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalSheetInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoalSheet"
+
+  /goal-sheets/{id}:
+    get:
+      operationId: getGoalSheet
+      tags: [goal-sheets]
+      summary: Get goal sheet by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Goal sheet with goals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoalSheetDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateGoalSheet
+      tags: [goal-sheets]
+      summary: Update a goal sheet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalSheetUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoalSheet"
+
+  /goal-sheets/{id}/submit:
+    post:
+      operationId: submitGoalSheet
+      tags: [goal-sheets]
+      summary: Submit goal sheet for manager approval
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoalSheet"
+
+  /goal-sheets/{id}/approve:
+    post:
+      operationId: approveGoalSheet
+      tags: [goal-sheets]
+      summary: Approve goal sheet (manager)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalInput"
+      responses:
+        "200":
+          description: Approved and locked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoalSheet"
+
+  /goal-sheets/{id}/return:
+    post:
+      operationId: returnGoalSheet
+      tags: [goal-sheets]
+      summary: Return goal sheet for rework (manager)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReturnInput"
+      responses:
+        "200":
+          description: Returned for rework
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoalSheet"
+
+  /goal-sheets/{id}/unlock:
+    post:
+      operationId: unlockGoalSheet
+      tags: [goal-sheets]
+      summary: Unlock goal sheet (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnlockInput"
+      responses:
+        "200":
+          description: Unlocked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoalSheet"
+
+  # Goals (within sheets)
+  /goal-sheets/{sheetId}/goals:
+    post:
+      operationId: createGoal
+      tags: [goals]
+      summary: Add a goal to a sheet
+      parameters:
+        - name: sheetId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+
+  /goals/{id}:
+    patch:
+      operationId: updateGoal
+      tags: [goals]
+      summary: Update a goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+    delete:
+      operationId: deleteGoal
+      tags: [goals]
+      summary: Delete a goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # Shared Goals
+  /shared-goals:
+    get:
+      operationId: listSharedGoals
+      tags: [shared-goals]
+      summary: List shared goals
+      responses:
+        "200":
+          description: List of shared goals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SharedGoal"
+    post:
+      operationId: createSharedGoal
+      tags: [shared-goals]
+      summary: Push shared goal to multiple employees
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SharedGoalInput"
+      responses:
+        "201":
+          description: Created and distributed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharedGoal"
+
+  /shared-goals/{id}:
+    patch:
+      operationId: updateSharedGoal
+      tags: [shared-goals]
+      summary: Update shared goal weightage
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SharedGoalUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharedGoal"
+
+  # Check-ins
+  /check-ins:
+    get:
+      operationId: listCheckIns
+      tags: [check-ins]
+      summary: List check-ins
+      parameters:
+        - name: cycleId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: quarter
+          in: query
+          schema:
+            type: string
+            enum: [Q1, Q2, Q3, Q4]
+        - name: goalSheetId
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: List of check-ins
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CheckIn"
+    post:
+      operationId: createCheckIn
+      tags: [check-ins]
+      summary: Create/open a check-in record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckInInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckIn"
+
+  /check-ins/{id}:
+    get:
+      operationId: getCheckIn
+      tags: [check-ins]
+      summary: Get check-in with all goal updates
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Check-in detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckInDetail"
+    patch:
+      operationId: updateCheckIn
+      tags: [check-ins]
+      summary: Update check-in status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckInUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckIn"
+
+  /check-ins/{id}/manager-review:
+    post:
+      operationId: addManagerReview
+      tags: [check-ins]
+      summary: Manager adds structured check-in comment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManagerReviewInput"
+      responses:
+        "200":
+          description: Review added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckIn"
+
+  /check-ins/{id}/submit:
+    post:
+      operationId: submitCheckIn
+      tags: [check-ins]
+      summary: Employee submits check-in
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckIn"
+
+  # Goal Updates (achievements within check-ins)
+  /check-ins/{checkInId}/goal-updates:
+    post:
+      operationId: upsertGoalUpdate
+      tags: [achievements]
+      summary: Add or update goal achievement in a check-in
+      parameters:
+        - name: checkInId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalUpdateInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoalUpdate"
+
+  # Dashboard
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get overall portal stats
+      parameters:
+        - name: cycleId
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: Summary stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/team-progress:
+    get:
+      operationId: getTeamProgress
+      tags: [dashboard]
+      summary: Get team progress (manager view)
+      parameters:
+        - name: cycleId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: quarter
+          in: query
+          schema:
+            type: string
+            enum: [Q1, Q2, Q3, Q4]
+      responses:
+        "200":
+          description: Team progress list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamMemberProgress"
+
+  /dashboard/completion-status:
+    get:
+      operationId: getCompletionStatus
+      tags: [dashboard]
+      summary: Completion rates by quarter
+      parameters:
+        - name: cycleId
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: Completion status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompletionStatus"
+
+  /dashboard/thrust-area-breakdown:
+    get:
+      operationId: getThrustAreaBreakdown
+      tags: [dashboard]
+      summary: Goal distribution by thrust area
+      parameters:
+        - name: cycleId
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: Thrust area breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ThrustAreaStats"
+
+  # Reports
+  /reports/achievement:
+    get:
+      operationId: getAchievementReport
+      tags: [reports]
+      summary: Achievement report (Planned vs Actual)
+      parameters:
+        - name: cycleId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: quarter
+          in: query
+          schema:
+            type: string
+            enum: [Q1, Q2, Q3, Q4]
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, csv]
+      responses:
+        "200":
+          description: Achievement report
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AchievementReportRow"
+
+  # Audit Logs
+  /audit-logs:
+    get:
+      operationId: listAuditLogs
+      tags: [audit-logs]
+      summary: List audit log entries
+      parameters:
+        - name: entityType
+          in: query
+          schema:
+            type: string
+        - name: entityId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Audit log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLog"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +863,666 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    # Auth
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [user, token]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+
+    # User
+    User:
+      type: object
+      required: [id, name, email, role, department]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [employee, manager, admin]
+        department:
+          type: string
+        designation:
+          type: ["string", "null"]
+        managerId:
+          type: ["integer", "null"]
+        managerName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    # Goal Cycle
+    GoalCycle:
+      type: object
+      required: [id, name, year, status, goalSettingStart, goalSettingEnd]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        year:
+          type: integer
+        status:
+          type: string
+          enum: [upcoming, active, closed]
+        goalSettingStart:
+          type: string
+        goalSettingEnd:
+          type: string
+        q1Start:
+          type: ["string", "null"]
+        q1End:
+          type: ["string", "null"]
+        q2Start:
+          type: ["string", "null"]
+        q2End:
+          type: ["string", "null"]
+        q3Start:
+          type: ["string", "null"]
+        q3End:
+          type: ["string", "null"]
+        q4Start:
+          type: ["string", "null"]
+        q4End:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    GoalCycleInput:
+      type: object
+      required: [name, year, goalSettingStart, goalSettingEnd]
+      properties:
+        name:
+          type: string
+        year:
+          type: integer
+        goalSettingStart:
+          type: string
+        goalSettingEnd:
+          type: string
+        q1Start:
+          type: string
+        q1End:
+          type: string
+        q2Start:
+          type: string
+        q2End:
+          type: string
+        q3Start:
+          type: string
+        q3End:
+          type: string
+        q4Start:
+          type: string
+        q4End:
+          type: string
+
+    GoalCycleUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [upcoming, active, closed]
+        goalSettingStart:
+          type: string
+        goalSettingEnd:
+          type: string
+        q1Start:
+          type: string
+        q1End:
+          type: string
+        q2Start:
+          type: string
+        q2End:
+          type: string
+        q3Start:
+          type: string
+        q3End:
+          type: string
+        q4Start:
+          type: string
+        q4End:
+          type: string
+
+    # Thrust Area
+    ThrustArea:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ThrustAreaInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    # Goal Sheet
+    GoalSheet:
+      type: object
+      required: [id, employeeId, employeeName, cycleId, cycleName, status, totalWeightage, goalsCount]
+      properties:
+        id:
+          type: integer
+        employeeId:
+          type: integer
+        employeeName:
+          type: string
+        employeeDepartment:
+          type: string
+        cycleId:
+          type: integer
+        cycleName:
+          type: string
+        status:
+          type: string
+          enum: [draft, submitted, approved, returned]
+        totalWeightage:
+          type: number
+        goalsCount:
+          type: integer
+        submittedAt:
+          type: ["string", "null"]
+        approvedAt:
+          type: ["string", "null"]
+        managerComment:
+          type: ["string", "null"]
+        isLocked:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    GoalSheetDetail:
+      type: object
+      required: [id, employeeId, employeeName, cycleId, cycleName, status, totalWeightage, goals]
+      properties:
+        id:
+          type: integer
+        employeeId:
+          type: integer
+        employeeName:
+          type: string
+        employeeDepartment:
+          type: string
+        cycleId:
+          type: integer
+        cycleName:
+          type: string
+        status:
+          type: string
+          enum: [draft, submitted, approved, returned]
+        totalWeightage:
+          type: number
+        submittedAt:
+          type: ["string", "null"]
+        approvedAt:
+          type: ["string", "null"]
+        managerComment:
+          type: ["string", "null"]
+        isLocked:
+          type: boolean
+        goals:
+          type: array
+          items:
+            $ref: "#/components/schemas/Goal"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    GoalSheetInput:
+      type: object
+      required: [cycleId]
+      properties:
+        cycleId:
+          type: integer
+
+    GoalSheetUpdate:
+      type: object
+      properties:
+        managerComment:
+          type: string
+
+    ApprovalInput:
+      type: object
+      required: [comment]
+      properties:
+        comment:
+          type: string
+
+    ReturnInput:
+      type: object
+      required: [comment]
+      properties:
+        comment:
+          type: string
+
+    UnlockInput:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+
+    # Goal
+    Goal:
+      type: object
+      required: [id, goalSheetId, thrustAreaId, thrustAreaName, title, description, uomType, target, weightage, status]
+      properties:
+        id:
+          type: integer
+        goalSheetId:
+          type: integer
+        thrustAreaId:
+          type: integer
+        thrustAreaName:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        uomType:
+          type: string
+          enum: [numeric_min, numeric_max, timeline, zero]
+        uomUnit:
+          type: ["string", "null"]
+        target:
+          type: string
+        weightage:
+          type: number
+        status:
+          type: string
+          enum: [not_started, on_track, completed]
+        isShared:
+          type: boolean
+        sharedGoalId:
+          type: ["integer", "null"]
+        isReadOnly:
+          type: boolean
+        progressScore:
+          type: ["number", "null"]
+        createdAt:
+          type: string
+
+    GoalInput:
+      type: object
+      required: [thrustAreaId, title, description, uomType, target, weightage]
+      properties:
+        thrustAreaId:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        uomType:
+          type: string
+          enum: [numeric_min, numeric_max, timeline, zero]
+        uomUnit:
+          type: string
+        target:
+          type: string
+        weightage:
+          type: number
+
+    GoalUpdate:
+      type: object
+      properties:
+        thrustAreaId:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        uomType:
+          type: string
+          enum: [numeric_min, numeric_max, timeline, zero]
+        uomUnit:
+          type: string
+        target:
+          type: string
+        weightage:
+          type: number
+        status:
+          type: string
+          enum: [not_started, on_track, completed]
+
+    # Shared Goals
+    SharedGoal:
+      type: object
+      required: [id, title, thrustAreaId, thrustAreaName, target, uomType, cycleId, ownerEmployeeId, recipientCount]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        thrustAreaId:
+          type: integer
+        thrustAreaName:
+          type: string
+        target:
+          type: string
+        uomType:
+          type: string
+          enum: [numeric_min, numeric_max, timeline, zero]
+        cycleId:
+          type: integer
+        ownerEmployeeId:
+          type: integer
+        ownerName:
+          type: string
+        recipientCount:
+          type: integer
+        createdAt:
+          type: string
+
+    SharedGoalInput:
+      type: object
+      required: [title, thrustAreaId, target, uomType, cycleId, recipientEmployeeIds, defaultWeightage]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        thrustAreaId:
+          type: integer
+        target:
+          type: string
+        uomType:
+          type: string
+          enum: [numeric_min, numeric_max, timeline, zero]
+        cycleId:
+          type: integer
+        recipientEmployeeIds:
+          type: array
+          items:
+            type: integer
+        defaultWeightage:
+          type: number
+
+    SharedGoalUpdate:
+      type: object
+      properties:
+        weightage:
+          type: number
+
+    # Check-in
+    CheckIn:
+      type: object
+      required: [id, goalSheetId, employeeId, employeeName, cycleId, quarter, status]
+      properties:
+        id:
+          type: integer
+        goalSheetId:
+          type: integer
+        employeeId:
+          type: integer
+        employeeName:
+          type: string
+        cycleId:
+          type: integer
+        quarter:
+          type: string
+          enum: [Q1, Q2, Q3, Q4]
+        status:
+          type: string
+          enum: [pending, in_progress, submitted, reviewed]
+        managerComment:
+          type: ["string", "null"]
+        reviewedAt:
+          type: ["string", "null"]
+        submittedAt:
+          type: ["string", "null"]
+        overallProgress:
+          type: ["number", "null"]
+        createdAt:
+          type: string
+
+    CheckInDetail:
+      type: object
+      required: [id, goalSheetId, employeeId, employeeName, cycleId, quarter, status, goalUpdates]
+      properties:
+        id:
+          type: integer
+        goalSheetId:
+          type: integer
+        employeeId:
+          type: integer
+        employeeName:
+          type: string
+        cycleId:
+          type: integer
+        quarter:
+          type: string
+          enum: [Q1, Q2, Q3, Q4]
+        status:
+          type: string
+          enum: [pending, in_progress, submitted, reviewed]
+        managerComment:
+          type: ["string", "null"]
+        reviewedAt:
+          type: ["string", "null"]
+        submittedAt:
+          type: ["string", "null"]
+        overallProgress:
+          type: ["number", "null"]
+        goalUpdates:
+          type: array
+          items:
+            $ref: "#/components/schemas/GoalUpdate"
+        createdAt:
+          type: string
+
+    CheckInInput:
+      type: object
+      required: [goalSheetId, quarter, cycleId]
+      properties:
+        goalSheetId:
+          type: integer
+        quarter:
+          type: string
+          enum: [Q1, Q2, Q3, Q4]
+        cycleId:
+          type: integer
+
+    CheckInUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, in_progress, submitted, reviewed]
+
+    ManagerReviewInput:
+      type: object
+      required: [comment]
+      properties:
+        comment:
+          type: string
+
+    # Goal Update (Achievement)
+    GoalUpdateInput:
+      type: object
+      required: [goalId, achievement, status]
+      properties:
+        goalId:
+          type: integer
+        achievement:
+          type: string
+        status:
+          type: string
+          enum: [not_started, on_track, completed]
+        notes:
+          type: string
+
+    # Dashboard
+    DashboardSummary:
+      type: object
+      required: [totalEmployees, goalsSubmitted, goalsApproved, goalsDraft, avgCompletionRate, checkInsCompleted, checkInsPending]
+      properties:
+        totalEmployees:
+          type: integer
+        goalsSubmitted:
+          type: integer
+        goalsApproved:
+          type: integer
+        goalsDraft:
+          type: integer
+        avgCompletionRate:
+          type: number
+        checkInsCompleted:
+          type: integer
+        checkInsPending:
+          type: integer
+        currentQuarter:
+          type: ["string", "null"]
+        cycleStatus:
+          type: ["string", "null"]
+
+    TeamMemberProgress:
+      type: object
+      required: [employeeId, employeeName, department, goalSheetStatus, checkInStatus, progressScore]
+      properties:
+        employeeId:
+          type: integer
+        employeeName:
+          type: string
+        department:
+          type: string
+        goalSheetStatus:
+          type: string
+        checkInStatus:
+          type: ["string", "null"]
+        progressScore:
+          type: ["number", "null"]
+        goalsCount:
+          type: integer
+        completedGoals:
+          type: integer
+
+    CompletionStatus:
+      type: object
+      required: [q1, q2, q3, q4, goalSetting]
+      properties:
+        goalSetting:
+          $ref: "#/components/schemas/PhaseCompletion"
+        q1:
+          $ref: "#/components/schemas/PhaseCompletion"
+        q2:
+          $ref: "#/components/schemas/PhaseCompletion"
+        q3:
+          $ref: "#/components/schemas/PhaseCompletion"
+        q4:
+          $ref: "#/components/schemas/PhaseCompletion"
+
+    PhaseCompletion:
+      type: object
+      required: [total, completed, percentage]
+      properties:
+        total:
+          type: integer
+        completed:
+          type: integer
+        percentage:
+          type: number
+
+    ThrustAreaStats:
+      type: object
+      required: [thrustAreaId, thrustAreaName, goalCount, avgWeightage, avgProgress]
+      properties:
+        thrustAreaId:
+          type: integer
+        thrustAreaName:
+          type: string
+        goalCount:
+          type: integer
+        avgWeightage:
+          type: number
+        avgProgress:
+          type: ["number", "null"]
+
+    # Reports
+    AchievementReportRow:
+      type: object
+      required: [employeeName, department, goalTitle, thrustArea, uomType, target, weightage, quarter, achievement, progressScore, status]
+      properties:
+        employeeName:
+          type: string
+        department:
+          type: string
+        goalTitle:
+          type: string
+        thrustArea:
+          type: string
+        uomType:
+          type: string
+        target:
+          type: string
+        weightage:
+          type: number
+        quarter:
+          type: string
+        achievement:
+          type: ["string", "null"]
+        progressScore:
+          type: ["number", "null"]
+        status:
+          type: string
+
+    # Audit Log
+    AuditLog:
+      type: object
+      required: [id, userId, userName, action, entityType, entityId, timestamp]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        action:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: integer
+        oldValue:
+          type: ["string", "null"]
+        newValue:
+          type: ["string", "null"]
+        reason:
+          type: ["string", "null"]
+        timestamp:
+          type: string
