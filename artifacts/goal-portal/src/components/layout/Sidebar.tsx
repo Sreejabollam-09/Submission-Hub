@@ -36,6 +36,9 @@ function IconCog() {
 function IconLogout() {
   return <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>;
 }
+function IconDownload() {
+  return <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>;
+}
 
 const NAV_ITEMS: NavItem[] = [
   { path: "/", label: "Dashboard", icon: <IconHome /> },
@@ -43,6 +46,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: "/goal-sheets", label: "Team Goal Sheets", icon: <IconClipboard />, roles: ["manager", "admin"] },
   { path: "/check-ins", label: "Check-ins", icon: <IconCheckCircle /> },
   { path: "/shared-goals", label: "Shared Goals", icon: <IconShare /> },
+  { path: "/scorecard", label: "My Scorecard", icon: <IconDownload />, roles: ["employee"] },
   { path: "/analytics", label: "Analytics", icon: <IconChart />, roles: ["manager", "admin"] },
   { path: "/reports", label: "Reports & Audit", icon: <IconTarget />, roles: ["admin"] },
   { path: "/admin", label: "Admin Panel", icon: <IconCog />, roles: ["admin"] },
